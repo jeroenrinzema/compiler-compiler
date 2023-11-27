@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
-	"strings"
+	"unicode"
 )
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	yyErrorVerbose = true
-	interpreter := lexer{
+	lex := lexer{
 		vars: make(map[string]float64),
 	}
 
@@ -25,19 +24,21 @@ func main() {
 			return
 		}
 
-		interpreter.input = input
-		interpreter.err = nil
+		lex.s = input
+		lex.pos = 0
+		lex.err = nil
 
-		yyParse(&interpreter)
+		yyParse(&lex)
 	}
 }
 
 const EOF = 0
 
 type lexer struct {
-	input string
-	err   error
-	vars  map[string]float64
+	pos  int
+	s    string
+	err  error
+	vars map[string]float64
 }
 
 func (l *lexer) Error(err string) {
@@ -45,41 +46,46 @@ func (l *lexer) Error(err string) {
 	fmt.Println(err)
 }
 
-type tokenDef struct {
-	regex *regexp.Regexp
-	token int
-}
-
-var tokens = []tokenDef{
-	{
-		regex: regexp.MustCompile(`^[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?`),
-		token: NUMBER,
-	},
-	{
-		regex: regexp.MustCompile(`^[_a-zA-Z][_a-zA-Z0-9]*`),
-		token: IDENTIFIER,
-	},
-}
-
 func (l *lexer) Lex(lval *yySymType) int {
-	l.input = strings.TrimLeft(l.input, " \t\n")
-
-	if len(l.input) == 0 {
-		return EOF
-	}
-
-	for _, def := range tokens {
-		str := def.regex.FindString(l.input)
-		if str != "" {
-			// Pass string content to the parser.
-			lval.String = str
-			l.input = l.input[len(str):]
-			return def.token
+	var c = rune(l.s[l.pos])
+	for unicode.IsSpace(c) {
+		if l.pos == len(l.s) {
+			return 0
 		}
+		c = rune(l.s[l.pos])
+		l.pos += 1
 	}
 
-	// Otherwise return the next letter.
-	ret := int(l.input[0])
-	l.input = l.input[1:]
-	return ret
+	switch {
+	case isNumber(c):
+		start := l.pos
+		end := l.lookup(isNumber)
+		lval.val = l.s[start:end]
+		return NUMBER
+	case unicode.IsLetter(c):
+		start := l.pos
+		end := l.lookup(unicode.IsLetter)
+		lval.val = l.s[start:end]
+		return IDENTIFIER
+	}
+
+	l.pos += 1
+	lval.val = string(c)
+	return int(c)
+}
+
+func (l *lexer) lookup(fn func(rune) bool) int {
+	for l.pos < len(l.s) {
+		c := rune(l.s[l.pos])
+		if !fn(c) {
+			return l.pos
+		}
+		l.pos += 1
+	}
+
+	return l.pos
+}
+
+func isNumber(r rune) bool {
+	return unicode.IsDigit(r) || r == '.'
 }

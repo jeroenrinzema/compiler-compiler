@@ -8,14 +8,14 @@ import (
 %}
 
 %union{
-String string
-Number float64
+val string
+num float64
 }
 
 
-%token<String> NUMBER IDENTIFIER
+%token<val> NUMBER IDENTIFIER
 
-%type <Number> expr
+%type <num> expr
 
 %%
 start: expr {fmt.Println($1)}
@@ -31,9 +31,9 @@ expr:
         }
     | IDENTIFIER {
         var ok bool
-        $$, ok = yylex.(*interpreter).vars[$1]
+        $$, ok = yylex.(*lexer).vars[$1]
         if !ok {
-                yylex.Error(fmt.Sprintf("Variable undefined: %s\n", $1))
+                yylex.Error(fmt.Sprintf("undefined variable: %s\n", $1))
         }
         }
     | expr '+' expr { $$ = $1 + $3 }
@@ -46,7 +46,7 @@ expr:
 
 assignment:
           IDENTIFIER '=' expr {
-                if !yylex.(*interpreter).evaluationFailed {
-                        yylex.(*interpreter).vars[$1] = $3 
+                if yylex.(*lexer) == nil {
+                        yylex.(*lexer).vars[$1] = $3 
                 }};
 %%
