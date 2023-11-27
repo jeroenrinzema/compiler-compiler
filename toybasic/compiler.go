@@ -30,7 +30,7 @@ func opr(op int, nargs int, args ...interface{}) Node {
 	} else if op == LET {
 		return LetOp{op, args[0].(VarOp), args[1].(Node)}
 	} else if op == IF {
-		return ConditionalOp{op, args[0].(Node), args[2].(Node), args[1].(RelOp), args[3].(Node)}
+		return ConditionalOp{op, args[0].(Node), args[2].(Node), args[1].(CompOp), args[3].(Node)}
 	}
 	return Op{op, args[0].(string)}
 }
@@ -57,11 +57,11 @@ func (op LetOp) Generate() {
 	fmt.Fprintln(writer)
 }
 
-type RelOp struct {
+type CompOp struct {
 	opType int
 }
 
-func (op RelOp) Generate() {
+func (op CompOp) Generate() {
 	var relChar = map[int]string{
 		GT: ">", LT: "<", LE: "<=", GE: ">=", EQ: "==", NE: "!=",
 	}
@@ -72,7 +72,7 @@ type ConditionalOp struct {
 	opType                int
 	left                  Node
 	right                 Node
-	relop                 RelOp
+	relop                 CompOp
 	conditionalExpression Node
 }
 
