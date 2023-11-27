@@ -1,0 +1,4 @@
+PRINT "Hello World"
+LET x = 3 + 1
+LET a = 3 + 1
+IF x >= 4 THEN PRINT "You shall not pass!"
