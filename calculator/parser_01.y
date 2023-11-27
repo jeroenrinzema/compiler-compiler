@@ -4,8 +4,8 @@ package main
 %}
 
 %union{
-String string
-Number float64
+val string
+num float64
 }
 
 
