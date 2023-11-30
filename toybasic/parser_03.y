@@ -42,6 +42,8 @@ line:
 
 statement:
     PRINT expr_list                     { $$ = opr(PRINT, 1, $2); }
+    | IF expression operator expression THEN statement { $$ = opr(IF, 4, $2, $3, $4, $6); }
+    | LET v '=' expression              { $$ = opr(LET, 2, $2, $4); }
     ;
 
 expr_list:
@@ -79,6 +81,15 @@ v:
 
 s:
     STRING                              { $$ = StringOp{STRING, $1};}
+    ;
+
+operator:
+    LT                                  { $$ = CompOp{LT}; }
+    | LE                                { $$ = CompOp{LE}; }
+    | GT                                { $$ = CompOp{GT}; }
+    | GE                                { $$ = CompOp{GE}; }
+    | EQ                                { $$ = CompOp{EQ}; }
+    | NE                                { $$ = CompOp{NE}; }
     ;
 
 %%
